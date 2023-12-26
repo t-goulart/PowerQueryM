@@ -1,0 +1,21 @@
+	// IMPORTANTE: Cole esse código no início do seu editor avançado
+	// Função que recebe deve receber uma coluna de horas para determinar em qual faixa se encaixa
+    _funcaoCalculaFaixaHoras = (hora as text) =>
+        let
+            // Converte a hora para o tipo time
+            horaTime = Time.FromText(hora),
+
+            // Condições para determinar a faixa de horas
+            faixa =
+                if Time.FromText("20:00:01") <= horaTime and horaTime <= Time.FromText("23:59:59") then "F-20:00 às 00:00"
+                else if Time.FromText("16:00:01") <= horaTime and horaTime <= Time.FromText("20:00:00") then "E-16:00 às 20:00"
+                else if Time.FromText("12:00:01") <= horaTime and horaTime <= Time.FromText("16:00:00") then "D-12:00 às 16:00"
+                else if Time.FromText("08:00:01") <= horaTime and horaTime <= Time.FromText("12:00:00") then "C-08:00 às 12:00"
+                else if Time.FromText("04:00:01") <= horaTime and horaTime <= Time.FromText("08:00:00") then "B-04:00 às 08:00"
+                else if Time.FromText("00:00:00") <= horaTime and horaTime <= Time.FromText("04:00:00") then "A-00:00 às 04:00"
+                else null
+        in
+            faixa,
+		
+    // Cria uma nova coluna com a faixa de horas | Altere os parâmetros que tem os 3 asteríscos | Cole o código abaixo após a ultima etapa
+	novaColunaFaixaHoras = Table.AddColumn(*** INFORME NESSE PARAMETRO A FASE ANTERIOR ***, "FAIXA DE HORAS", each _funcaoCalculaFaixaHoras([*** INFORME O CAMPO HORA ***]))

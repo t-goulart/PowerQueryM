@@ -1,0 +1,17 @@
+	// IMPORTANTE: Cole esse código no início do seu editor avançado
+	// Função que recebe duas datas, compara e retorna a faixa de dias de acordo com a diferença de dias entre as datas
+	_funcaoCaculaFaixaDias = (dataInicial, dataFinal) =>
+		let
+			diferencaEmDias = if dataFinal <> null then Duration.From(dataFinal - dataInicial) else Duration.From(DateTime.Date(DateTime.LocalNow()) - dataInicial), 
+			dias = Number.From(diferencaEmDias)
+		in
+			// Pode altere abaixo a quantidade de dias para atender a sua necessidade
+			if dias < 0 then "A - 00 À 07 Dias"
+			else if dias >= 0 and dias < 8 then "A - 00 À 07 Dias"
+			else if dias >= 8 and dias < 15 then "B - 08 À 14 Dias"
+			else if dias >= 15 and dias < 22 then "C - 15 À 21 Dias"
+			else if dias >= 22 and dias < 29 then "D - 22 À 28 Dias"
+			else "E - Acima de 28 Dias",
+
+// Cria uma nova coluna com a faixa de dias | Altere os parâmetros que tem os 3 asteríscos | Cole o código abaixo após a ultima etapa
+	novaColunaFaixaDeDias = Table.AddColumn(*** INFORME NESSE PARAMETRO A FASE ANTERIOR ***, "FAIXA DE Dias", each _funcaoCalculaFaixaHoras([*** INFORME O CAMPO DATA ***], [*** INFORME O CAMPO DATA ***]))

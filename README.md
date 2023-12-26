@@ -1,4 +1,4 @@
-# PowerQueryM
+# Power Query - Linguagem M
 Repositório dedicado a compartilhar funções e rotinas criadas com Power Query M (Linguagem M) do Power BI 
 
 ## Instruções para utilização dos códigos

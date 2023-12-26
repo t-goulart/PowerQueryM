@@ -1,0 +1,25 @@
+    // Função que corrige erros devido a acentuação
+    _funcaoCorrigeAcentuacao = (texto) =>
+        if Text.Length(texto) = null then
+            null
+        else
+            let
+                // Passo o erro e o que deve ser substituido no seu lugar
+                listaPossiveisSubstituicoes =
+                {
+                    {"ã¢", "â"}, {"ã¡", "á"}, {"ÃL", "Ál"}, {"ã£", "ã"}, {"ÃN", "Ân"}, {"ãS", "ás"}, {"ÃG", "ág"}, 
+                    {"ã©", "é"}, {"ãª", "ê"}, {"ã­G", "ég"}, 
+                    {"Suã­Ça", "Suíça"}, {"ã­L", "íl"}, {"ã­B", "íb"}, {"ã­N", "ín"}, {"ã­C", "íc"}, {"ã­Ç", "íç"}, {"ãN", "ín"}, {"ãM", "ím"}, {"fãC", "fíc"}, {"jaã", "jaí"},
+                    {"ã³", "ó"}, {"ã´", "ô"},
+                    {"ãº", "ú"},
+                    {"ãÃO", "ção"}, {"ã§", "ç"}, {"ã§Ã", "çã"}, {"ã§", "ções"},
+                    {"Nâ°", "Nº"}, {"Nâº", "Nº"}
+                },
+
+                // Faz a substitução de acordo com cada linha da coluna informada
+                retornaTextoCorrigido = List.Accumulate(listaPossiveisSubstituicoes, texto, (state, listaPossiveisSubstituicoes) => Text.Replace(state, listaPossiveisSubstituicoes{0}, listaPossiveisSubstituicoes{1}))
+            in
+            retornaTextoCorrigido,
+		
+    // Aplica nessa coluna a função que corrige erros de acentuação
+    corrigeErrosColuna = Table.TransformColumns(***NOME DA ETAPA ANTERIOR***, {{"***NOME DA COLUNA***", each _funcaoCorrigeAcentuacao(_), type text}}),

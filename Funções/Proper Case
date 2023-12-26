@@ -1,0 +1,18 @@
+    // Função transforma o texto deixando a primeira letra de cada palavra maiúscula e as demais minúsculas
+    _funcaoEditaTexto = (texto) =>
+        if Text.Length(texto) = null then
+            null
+        else
+            let
+                // Divide o texto usando o espaço vazio como base
+                divideTexto = Text.Split(texto, " "),
+
+                // Aplica o Proper (Primeira letra maiúscula e demais minúsculas) em cada palavra recebida
+                palavraProperCase = List.Transform(divideTexto, each Text.Proper(_)),
+
+                // Combina novamente o texto antes de retornar
+                textoProperCase = Text.Combine(palavraProperCase, " ")
+            in
+		
+    // Aplica nessa coluna a função que transforma o texto deixando a primeira letra de cada palavra maiúscula e as demais minúsculas
+    aplicaFormatacaoColuna = Table.TransformColumns(***NOME DA ETAPA ANTERIOR***, {{"***NOME DA COLUNA***", each _funcaoEditaTexto(_), type text}})

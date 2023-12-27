@@ -7,4 +7,4 @@
             novaColuna,
 
     // Função retorna colunas de uma outra base usando uma coluna como referencia
-    retornaColunasDeOutraTabela = _funcaoProcv(novaColunaFaixaDias, TBL_JOBS, "JOB_NAME", {"BANCO", "USUARIO", "PRODUTO"})
+    retornaColunasDeOutraTabela = _funcaoProcv(*** ETAPA ANTERIOR ***, *** TABELA ***, "COLUNA REFERÊNCIA", {"COLUNA1", "COLUNA2", "COLUNA3"})

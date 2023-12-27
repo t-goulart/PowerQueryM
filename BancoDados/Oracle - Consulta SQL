@@ -1,0 +1,15 @@
+// O código abaixo permite que possamos conectar o Power BI com o Oracle e consultar apenas os dados que queremos
+// É possíveil fazer consultas complexas, usar funções, joins e etc. Desta forma é mais fácil para realizar o ETL
+// Copie o código abaixo e substitua conforme informado
+let
+    Fonte = Oracle.Database("*** BANCO DE DADOS ***", [
+        HierarchicalNavigation=true, 
+        Query="
+            SELECT
+                *
+            FROM
+                NOME_DA_TABELA_OU_VIEW;
+        "
+    ])
+in
+    Fonte

@@ -1,0 +1,22 @@
+// O código abaixo permite que possamos conectar o Power BI com o MySQL e consultar apenas os dados que queremos
+// É possíveil fazer consultas complexas, usar funções, joins e etc. Desta forma é mais fácil para realizar o ETL
+// Copie o código abaixo e substitua conforme informado
+
+let
+  // Faz a conexão com a tabela de origem
+  conexaoComBaseDeDados = MySQL.Database("*** SERVIDOR ***", "*** BANCO ***", [ReturnSingleDatabase=true]),
+
+  // Faz a expansão da tabela que vamos usar como base para o restante das transformações
+  tabelaOrigem = let
+            query = 
+            "
+            SELECT
+                *
+            FROM NOME_DA_TABELA_OU_VIEW
+            WHERE CAMPO >= '2023/01/01';
+            ",
+            tabela = Value.NativeQuery(conexaoComBaseDeDados, query)
+        in
+            tabela,
+in
+  tabelaOrigem

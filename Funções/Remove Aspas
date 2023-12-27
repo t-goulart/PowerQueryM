@@ -1,3 +1,4 @@
+  // IMPORTANTE: Cole esse código no início do seu editor avançado
   // Função para remover as aspas duplas de uma única coluna
   _funcaoRemoverAspas = (coluna) => Text.Replace(coluna, """", ""),
 

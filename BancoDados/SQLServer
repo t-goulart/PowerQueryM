@@ -1,0 +1,22 @@
+// O código abaixo permite que possamos conectar o Power BI com o Oracle e consultar apenas os dados que queremos
+// É possíveil fazer consultas complexas, usar funções, joins e etc. Desta forma é mais fácil para realizar o ETL
+// Copie o código abaixo e substitua conforme informado
+
+let
+  // Faz a conexão com a base de dados
+  conexaoComBaseDeDados = Sql.Database("LINK DA CONEXÃO COM SQLSERVER", "*** NOME DA TABELA ***"),
+
+    // Faz a expansão da tabela que vamos usar como base para o restante das transformações
+    tabelaOrigem = let
+        query = 
+        "
+          SELECT 
+            * 
+          FROM NOME_DA_TABELA_OU_VIEW
+         ",
+        tabela = Value.NativeQuery(conexaoComBaseDeDados, query)
+    in
+        tabela
+
+in
+  tabelaOrigem

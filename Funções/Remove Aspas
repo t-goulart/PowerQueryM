@@ -1,0 +1,8 @@
+  // Função para remover as aspas duplas de uma única coluna
+  _funcaoRemoverAspas = (coluna) => Text.Replace(coluna, """", ""),
+
+  // Lista de colunas das quais você deseja remover as aspas duplas
+  listaColunas = {"COLUNA1", "COLUNA2", "COLUNA3"},
+
+  // Aplica a função a todas as colunas na lista 'listaColunas' usando Table.TransformColumns
+  removeAspasDaColuna = Table.TransformColumns(*** ETAPA ANTERIOR ***, List.Transform(listaColunas, each {_, _funcaoRemoverAspas})),

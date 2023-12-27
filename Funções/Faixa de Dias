@@ -14,4 +14,4 @@
 			else "E - Acima de 28 Dias",
 
 // Cria uma nova coluna com a faixa de dias | Altere os parâmetros que tem os 3 asteríscos | Cole o código abaixo após a ultima etapa
-	novaColunaFaixaDeDias = Table.AddColumn(*** INFORME NESSE PARAMETRO A FASE ANTERIOR ***, "FAIXA DE Dias", each _funcaoCalculaFaixaHoras([*** INFORME O CAMPO DATA ***], [*** INFORME O CAMPO DATA ***]))
+	novaColunaFaixaDeDias = Table.AddColumn(*** INFORME NESSE PARAMETRO A FASE ANTERIOR ***, "FAIXA DE DIAS", each _funcaoCalculaFaixaHoras([*** INFORME O CAMPO DATA ***], [*** INFORME O CAMPO DATA ***]))

@@ -1,6 +1,23 @@
 # Power Query - Linguagem M
 Repositório dedicado a compartilhar funções e rotinas criadas com Power Query M (Linguagem M) do Power BI 
 
+## Conteúdo das pastas
+#### Banco de Dados
+1. MySQL
+2. Oracle
+3. SQLServer
+#### Funções
+1. Corrigir Acentos
+2. Faixa de Dias
+3. Faixa de Horas
+4. PROCV
+5. Proper Case
+6. Remove Aspas
+#### Tabelas
+1. Calendario
+
+
+
 ## Instruções para utilização dos códigos
 
 Os códigos já estão disponíveis separadamente.

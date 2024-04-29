@@ -1,0 +1,10 @@
+    // Função que transforma os dados de uma coluna, retornando tudo após o delimitador específico
+    _funcaoRetornaTextoAposSeparador = (EtapaAnterior as table, NomeDaColuna as text, Separador as text)  as table =>
+        if Text.Length(NomeDaColuna) = null then 
+            null
+        else
+            let
+                // Altera a coluna informada separando o texto (Com baseno separador) e retorna o texto específico com base na posição
+                resultado = Table.TransformColumns(EtapaAnterior, {{NomeDaColuna, each Text.AfterDelimiter(_, Separador)}})
+            in
+                resultado,

@@ -1,0 +1,22 @@
+// Cria uma tabela que retorna a data e hora atual
+let
+    CriaTabelaDataHora = 
+        #table(1, {{DateTime.LocalNow()}}),
+
+    AlteraTipoDado = 
+        Table.TransformColumnTypes(
+            CriaTabelaDataHora,
+            {
+                {"Column1", type datetime}
+            }
+        ),
+    
+    RenomeiaColunas = 
+        Table.RenameColumns(
+            AlteraTipoDado,
+            {
+                {"Column1", "Data da atualização"}
+            }
+        )
+in
+    RenomeiaColunas

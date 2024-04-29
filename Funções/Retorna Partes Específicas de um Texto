@@ -1,0 +1,10 @@
+    // Função que transforma os dados de uma coluna, retornando apenas o dado após o separador e de uma posição específica
+    _funcaoRetornaParteEspecifica = (EtapaAnterior as table, NomeDaColuna as text, Separador as text, PosicaoTexto as number)  as table =>
+        if Text.Length(NomeDaColuna) = null then 
+            null
+        else
+            let
+                // Altera a coluna informada separando o texto (Com baseno separador) e retorna o texto específico com base na posição
+                resultado = Table.TransformColumns(EtapaAnterior, {{NomeDaColuna, each Text.Split(_, Separador){PosicaoTexto}}})
+            in
+                resultado,

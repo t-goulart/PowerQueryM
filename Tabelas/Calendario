@@ -12,25 +12,50 @@ let
     tabelaCalendario = Table.FromList(listaDeDatasDoCalendario, Splitter.SplitByNothing(), {"DATA"}),
 
     //Cria uma nova coluna que retorna o dia com base na coluna DATA
-    colunaDia = Table.AddColumn(tabelaCalendario, "DIA", each Date.Day([DATA])),
+    colunaDia = 
+        Table.AddColumn(
+            tabelaCalendario, 
+            "DIA", 
+            each Date.Day([DATA])
+        ),
 
     //Cria uma nova coluna que retorna o dia com base na coluna DATA
-    colunaMes = Table.AddColumn(colunaDia, "MÊS", each Date.Month([DATA])),
+    colunaMes = 
+        Table.AddColumn(
+            colunaDia, 
+            "MÊS", 
+            each Date.Month([DATA])
+        ),
 
     //Cria uma nova coluna que retorna o dia com base na coluna DATA
-    colunaAno = Table.AddColumn(colunaMes, "ANO", each Date.Year([DATA])),
+    colunaAno = 
+        Table.AddColumn(
+            colunaMes, 
+            "ANO", 
+            each Date.Year([DATA])
+        ),
 
     //Edita o tipo de dado das colunas DATA e DIA | É possível usar esse passo para editar "n" colunas
-    colunasAlteradasParaTipoCorreto = Table.TransformColumnTypes(colunaAno, {{"DATA", type date}, {"DIA", Int64.Type}, {"MÊS", Int32.Type}}),
+    colunasAlteradasParaTipoCorreto = 
+        Table.TransformColumnTypes(
+            colunaAno, 
+            {
+                {"DATA", type date}
+            }
+        ),
 
     //Cria uma nova coluna retornando o ano e mês com baseada na coluna "DATA" 
-    colunaMesAno = Table.AddColumn(colunasAlteradasParaTipoCorreto, "ANO/MÊS", each
-        let 
-            //Atribuo a variável a concatenação do resultado de uma função que retorna o ano e outra que edita a data retornando a parte que corresponde ao mês
-            valorAtribuidoANovaColuna = Text.From(Date.Year([DATA])) & Text.PadStart(Text.From(Date.Month([DATA])), 2, "0")
-        in
-            valorAtribuidoANovaColuna
-    ),
+    colunaMesAno = 
+        Table.AddColumn(
+            colunasAlteradasParaTipoCorreto, 
+            "ANO/MÊS", 
+            each
+                let 
+                    //Atribuo a variável a concatenação do resultado de uma função que retorna o ano e outra que edita a data retornando a parte que corresponde ao mês
+                    valorAtribuidoANovaColuna = Text.From(Date.Year([DATA])) & Text.PadStart(Text.From(Date.Month([DATA])), 2, "0")
+                in
+                    valorAtribuidoANovaColuna
+            ),
 
     //Cria uma nova coluna que retorna o ano e mes como numero
     colunaAnoMes = Table.AddColumn(colunaMesAno, "ANOMES", each 
@@ -49,48 +74,83 @@ let
     ),
 
     //Cria uma nova coluna que retorna o mês e ano, mas se o mês é igual ao atual retorna "Mês Atual"
-    colunaMesAtual = Table.AddColumn(colunaAnoMes, "MÊS ATUAL", each
-        let
-            //Com base na data e hora atual retorno o primeiro dia do mês e depois atualizo para retornar apenas a data 
-            identificaMesAtualComBaseNaDataHoje = DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())),
-            //Com base na data da linha da tabela retorno o primeiro dia do mês
-            identificaMesAtualComBaseNaDataDaTabela = Date.StartOfMonth([DATA]),
+    colunaMesAtual = 
+        Table.AddColumn(
+            colunaAnoMes, 
+            "MÊS ATUAL", 
+            each
+                let
+                    //Com base na data e hora atual retorno o primeiro dia do mês e depois atualizo para retornar apenas a data 
+                    identificaMesAtualComBaseNaDataHoje = DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())),
+                    //Com base na data da linha da tabela retorno o primeiro dia do mês
+                    identificaMesAtualComBaseNaDataDaTabela = Date.StartOfMonth([DATA]),
 
-            //Se o valor das duas variáveis é igual retorna "Mês Atual" se não retorna o campo ANOMES
-            valorAtribuidoANovaColuna = if identificaMesAtualComBaseNaDataHoje = identificaMesAtualComBaseNaDataDaTabela then "MÊS ATUAL" else [ANOMES]      
-        in
-            valorAtribuidoANovaColuna 
-    ),
+                    //Se o valor das duas variáveis é igual retorna "Mês Atual" se não retorna o campo ANOMES
+                    valorAtribuidoANovaColuna = if identificaMesAtualComBaseNaDataHoje = identificaMesAtualComBaseNaDataDaTabela then "MÊS ATUAL" else [ANOMES]      
+                in
+                    valorAtribuidoANovaColuna 
+            ),
 
     //Cria uma nova coluna com MÊS (por extenso) e ano
-    colunaMesAnoPorExtenso = Table.AddColumn(colunaMesAtual, "MÊS/ANO", each 
-        let 
-            //Atribui a variável o ano com base na coluna data e converte em texto
-            retornaAnoComBaseNaColunaData = Text.From(Date.Year([DATA])),   
-            //Atribui a variável o mês com base na coluna data e converte em texto            
-            retornaMesComBaseNaColunaData = Text.From(Date.MonthName([DATA])), 
+    colunaMesAnoPorExtenso = 
+        Table.AddColumn(
+            colunaMesAtual, 
+            "MÊS/ANO", 
+            each 
+                let 
+                    //Atribui a variável o ano com base na coluna data e converte em texto
+                    retornaAnoComBaseNaColunaData = Text.From(Date.Year([DATA])),   
+                    //Atribui a variável o mês com base na coluna data e converte em texto            
+                    retornaMesComBaseNaColunaData = Text.From(Date.MonthName([DATA])), 
 
-            //Concatena o mês/ano
-            valorAtribuidoANovaColuna = Text.Combine({retornaMesComBaseNaColunaData, "/", retornaAnoComBaseNaColunaData}, "")
-        in
-            valorAtribuidoANovaColuna
-    ),
+                    //Concatena o mês/ano
+                    valorAtribuidoANovaColuna = Text.Combine({retornaMesComBaseNaColunaData, "/", retornaAnoComBaseNaColunaData}, "")
+                in
+                    valorAtribuidoANovaColuna
+            ),
 
     //Cria a nova coluna com a safra
-    colunaSafra = Table.AddColumn(colunaMesAnoPorExtenso, "SAFRA", each
-        let
-            //Atribui a variável
-            anoColunaData = Date.Year([DATA]),
-            mesColunaData = Date.Month([DATA]),
-            diaPadrao = 1,
+    colunaSafra = 
+        Table.AddColumn(
+            colunaMesAnoPorExtenso, 
+            "SAFRA", 
+            each
+                let
+                    //Atribui a variável
+                    anoColunaData = Date.Year([DATA]),
+                    mesColunaData = Date.Month([DATA]),
+                    diaPadrao = 1,
 
-            //Concatena os dados das colunas mas convertendo em data
-            valorAtribuidoANovaColuna = DateTime.From(#date(anoColunaData, mesColunaData, diaPadrao))
-        in
-            valorAtribuidoANovaColuna
-    ),
+                    //Concatena os dados das colunas mas convertendo em data
+                    valorAtribuidoANovaColuna = DateTime.From(#date(anoColunaData, mesColunaData, diaPadrao))
+                in
+                    valorAtribuidoANovaColuna
+            ),
+
+    // Retorna o número do dia útil
+    colunaDiaUtil = 
+        Table.AddColumn(
+            colunaSafra,
+            "DIA ÚTIL",
+            each 
+                if Date.DayOfWeek([DATA], Day.Sunday) <= 5 then 
+                    Date.DayOfWeek([DATA], Day.Sunday) 
+                else 
+                    0
+        ),
 
     //Converte o tipo de dado da coluna
-    converteTipoDadoColuna = Table.TransformColumnTypes(colunaSafra, {{"SAFRA", type date}, {"ANOMES", Int32.Type}})
+    converteTipoDadoColuna = 
+        Table.TransformColumnTypes(
+            colunaDiaUtil, 
+            {
+                {"DIA", Int64.Type}, 
+                {"MÊS", Int32.Type},
+                {"ANO", Int32.Type},
+                {"SAFRA", type date}, 
+                {"ANOMES", Int32.Type},
+                {"DIA ÚTIL", Int32.Type}
+            }
+        )
 in
     converteTipoDadoColuna

@@ -1,0 +1,6 @@
+// Função que remove multiplas colunas
+_FuncaoRemoverMultiplasColunas = (EtapaAnterior as table, NomeDasColunas as list) as table =>
+    let
+        Resultado = Table.RemoveColumns(EtapaAnterior, NomeDasColunas)
+    in
+        Resultado,

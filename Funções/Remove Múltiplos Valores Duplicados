@@ -1,0 +1,6 @@
+// Função que remove multiplos valores duplicados de multiplas colunas
+_FuncaoRemoverMultiplosValoresDuplicados= (EtapaAnterior as table, NomeDasColunas as list) as table =>
+    let
+        Resultado = Table.Distinct(EtapaAnterior, NomeDasColunas)
+    in
+        Resultado,

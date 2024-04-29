@@ -6,10 +6,19 @@ let
     dataFinalDoCalendario = DateTime.Date(List.Max(*** INFORME SUA TABELA[CAMPO DATA]***)),
 
     //Cria uma variável que recebe uma lista que soma a data inicial mais uma quantidade de dias
-    listaDeDatasDoCalendario = List.Dates(dataInicialDoCalendario, Number.From(dataFinalDoCalendario - dataInicialDoCalendario) + 1, #duration(1, 0, 0, 0)),
+    listaDeDatasDoCalendario = 
+        List.Dates(
+            dataInicialDoCalendario, 
+            Number.From(dataFinalDoCalendario - dataInicialDoCalendario) + 1, #duration(1, 0, 0, 0)
+        ),
 
     //Cria uma tabela com base na lista da variável anterior e atribui a uma coluna chamada "DATA"
-    tabelaCalendario = Table.FromList(listaDeDatasDoCalendario, Splitter.SplitByNothing(), {"DATA"}),
+    tabelaCalendario = 
+        Table.FromList(
+            listaDeDatasDoCalendario, 
+            Splitter.SplitByNothing(), 
+            {"DATA"}
+        ),
 
     //Cria uma nova coluna que retorna o dia com base na coluna DATA
     colunaDia = 
@@ -45,7 +54,7 @@ let
         ),
 
     //Cria uma nova coluna retornando o ano e mês com baseada na coluna "DATA" 
-    colunaMesAno = 
+    colunaAnoMes = 
         Table.AddColumn(
             colunasAlteradasParaTipoCorreto, 
             "ANO/MÊS", 
@@ -56,22 +65,6 @@ let
                 in
                     valorAtribuidoANovaColuna
             ),
-
-    //Cria uma nova coluna que retorna o ano e mes como numero
-    colunaAnoMes = Table.AddColumn(colunaMesAno, "ANOMES", each 
-        let 
-            //Atribui a variável o ano com base na coluna data e converte em texto
-            retornaAnoComBaseNaColunaData = Text.From(Date.Year([DATA])),
-            //Atribui a variável o mês com base na coluna data e converte em texto            
-            retornaMesComBaseNaColunaData = Text.From(Date.Month([DATA])),
-            //Identifica se a variável do mês tem um caractere, se sim concatena com um zero            
-            formataVariavelcomMes = if Text.Length(retornaMesComBaseNaColunaData) = 1 then Text.Combine({"0", retornaMesComBaseNaColunaData}) else retornaMesComBaseNaColunaData,
-
-            //Concatena o ano e o mês e retorna
-            valorAtribuidoANovaColuna = Text.Combine({retornaAnoComBaseNaColunaData, formataVariavelcomMes}, "")            
-        in 
-            valorAtribuidoANovaColuna
-    ),
 
     //Cria uma nova coluna que retorna o mês e ano, mas se o mês é igual ao atual retorna "Mês Atual"
     colunaMesAtual = 
@@ -86,7 +79,7 @@ let
                     identificaMesAtualComBaseNaDataDaTabela = Date.StartOfMonth([DATA]),
 
                     //Se o valor das duas variáveis é igual retorna "Mês Atual" se não retorna o campo ANOMES
-                    valorAtribuidoANovaColuna = if identificaMesAtualComBaseNaDataHoje = identificaMesAtualComBaseNaDataDaTabela then "MÊS ATUAL" else [ANOMES]      
+                    valorAtribuidoANovaColuna = if identificaMesAtualComBaseNaDataHoje = identificaMesAtualComBaseNaDataDaTabela then "MÊS ATUAL" else [#"ANO/MÊS"]     
                 in
                     valorAtribuidoANovaColuna 
             ),
@@ -148,8 +141,9 @@ let
                 {"MÊS", Int32.Type},
                 {"ANO", Int32.Type},
                 {"SAFRA", type date}, 
-                {"ANOMES", Int32.Type},
-                {"DIA ÚTIL", Int32.Type}
+                {"ANO/MÊS", Int32.Type},
+                {"DIA ÚTIL", Int32.Type},
+                {"MÊS ATUAL", Int32.Type}
             }
         )
 in

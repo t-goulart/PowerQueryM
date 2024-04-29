@@ -20,11 +20,3 @@
                 )
         in
             Resultado,
-
-    AlterarValoresColunaPrioridade = 
-        _FuncaoSubstituiTextos(
-            "Prioridade", 
-            {"1", "3", "5", "9"}, 
-            {"Urgente", "Importante", "Média", "Baixa"}, 
-            AlteraTipoDadoColunas
-        ),

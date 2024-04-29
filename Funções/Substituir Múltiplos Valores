@@ -1,0 +1,30 @@
+    //Função para substituir múltiplos valores de textos de uma única vez
+    _FuncaoSubstituiTextos = (NomeColuna as text, ValoresAntigo as list, ValoresNovos as list, EtapaAnterior as table) =>
+        let
+            SubstituiValores = (Valor) => 
+                List.Accumulate( //Aplica a substituição para cada par de valores
+                    List.Zip({ValoresAntigo, ValoresNovos}), //List.Zip vai emparelhar os valores antigos com novos de acordo com a posição correspondente
+                    Valor, 
+                    (ValorAtual, NovoValor) => 
+                    let 
+                        Antigo = NovoValor{0}, Novo = NovoValor{1} 
+                    in 
+                        if ValorAtual = Antigo then Novo else ValorAtual
+                ),
+            Resultado = 
+                Table.TransformColumns(
+                    EtapaAnterior, 
+                    {
+                        {NomeColuna, each SubstituiValores(_), type any}
+                    }
+                )
+        in
+            Resultado,
+
+    AlterarValoresColunaPrioridade = 
+        _FuncaoSubstituiTextos(
+            "Prioridade", 
+            {"1", "3", "5", "9"}, 
+            {"Urgente", "Importante", "Média", "Baixa"}, 
+            AlteraTipoDadoColunas
+        ),

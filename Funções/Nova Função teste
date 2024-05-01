@@ -1,0 +1,29 @@
+let
+    Funcao = (tabelaA as table, tabelaB as table, idA as text, idB as text, situacao as text) =>
+    let
+        // Mescla as tabelas com base nos IDs
+        TabelaMesclada = Table.NestedJoin(tabelaA, {"ID_A"}, tabelaB, {"ID_B"}, "TabelaB", JoinKind.LeftOuter),
+
+        // Expande a tabela mesclada para incluir as colunas de status e situação da tabela B
+        TabelaExpandida = Table.ExpandTableColumn(TabelaMesclada, "TabelaB", {"Status", "Situacao"}),
+
+        // Cria uma coluna de status personalizada
+        StatusPersonalizado = Table.AddColumn(TabelaExpandida, "StatusPersonalizado", each if [ID_A] = [ID_B] and [Situacao] = situacao then [Status] else [Status.A]),
+
+        // Remove as colunas de status originais
+        RemoverColunas = Table.RemoveColumns(StatusPersonalizado, {"Status", "Status.A"}),
+
+        // Renomeia a coluna de status personalizado para "Status"
+        RenomearColuna = Table.RenameColumns(RemoverColunas, {{"StatusPersonalizado", "Status"}})
+    in
+        RenomearColuna
+in
+    Função,
+
+
+let
+    TabelaA = ... , // Sua tabela A aqui
+    TabelaB = ... , // Sua tabela B aqui
+    Resultado = Funcao(TabelaA, TabelaB, "ID_A", "ID_B", "Concluído")
+in
+    Resultado

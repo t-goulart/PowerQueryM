@@ -1,0 +1,52 @@
+let
+    //Cria uma variável que retorna a menor data usando como base uma tabela específica e a coluna que contém a data inicial
+    //dataInicialDoCalendario = DateTime.Date(List.Min(fFolhaPagamento[DATA PAGAMENTO])),
+    dataInicialDoCalendario = #date(2021, 12, 29),
+
+    //Cria uma variável que retorna a maior data usando como base uma tabela específica e a coluna que contém a data final
+    //dataFinalDoCalendario = DateTime.Date(List.Max(fFolhaPagamento[DATA PAGAMENTO])),
+    dataFinalDoCalendario = Date.From(DateTime.LocalNow()),
+
+    // Retorna a diferença de dias entre as datas
+    qtdeDias = Duration.Days(dataFinalDoCalendario-dataInicialDoCalendario) + 1,
+
+    // Cria uma lsita de datas com base na data inicial e na quantidade de dias
+    listaDatas = List.Dates(dataInicialDoCalendario, qtdeDias, #duration(1, 0, 0, 0)),
+
+    registros = 
+        List.Transform(
+            listaDatas,
+            each
+                {
+                    _,
+                    Text.Proper(Date.DayOfWeekName(_)),
+                    Text.Proper(Date.MonthName(_)),
+                    Date.Day(_),
+                    Date.Month(_),
+                    Date.Year(_),
+                    #date(Date.Year(_), Date.Month(_), 1),
+                    Date.DayOfWeek(_, Day.Sunday),
+                    Date.ToText(_, "MMyyyy"),
+                    if DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())) = Date.StartOfMonth(_) then "MÊS ATUAL" else Date.ToText(_, "MMyyyy")
+                }
+        ),
+
+    tabelaCalendario =
+        #table(
+            type 
+                table[
+                    DATA = date, 
+                    DIA SEMANA = text, 
+                    NOME MÊS = text,
+                    DIA = Int64.Type,
+                    MÊS = Int64.Type,
+                    ANO = Int64.Type,
+                    SAFRA = date,
+                    DIA ÚTIL = Int64.Type, 
+                    MES ANO = text,
+                    MES ATUAL = text
+                ],
+            registros
+        )
+in
+   tabelaCalendario

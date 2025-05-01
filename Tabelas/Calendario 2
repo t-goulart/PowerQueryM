@@ -1,51 +1,54 @@
 let
-    //Cria uma variável que retorna a menor data usando como base uma tabela específica e a coluna que contém a data inicial
-    //dataInicialDoCalendario = DateTime.Date(List.Min(fFolhaPagamento[DATA PAGAMENTO])),
-    dataInicialDoCalendario = #date(2021, 12, 29),
+    // Define a data inicial fixa para o calendário (1º de janeiro de 2025)
+    dataInicialDoCalendario = #date(2025, 1, 1),
 
-    //Cria uma variável que retorna a maior data usando como base uma tabela específica e a coluna que contém a data final
-    //dataFinalDoCalendario = DateTime.Date(List.Max(fFolhaPagamento[DATA PAGAMENTO])),
+    // Obtém a data final do calendário baseada na data atual do sistema
     dataFinalDoCalendario = Date.From(DateTime.LocalNow()),
 
-    // Retorna a diferença de dias entre as datas
-    qtdeDias = Duration.Days(dataFinalDoCalendario-dataInicialDoCalendario) + 1,
+    // Calcula a quantidade de dias entre a data inicial e a data final,
+    // adicionando 1 para incluir a data final no intervalo
+    qtdeDias = Duration.Days(dataFinalDoCalendario - dataInicialDoCalendario) + 1,
 
-    // Cria uma lsita de datas com base na data inicial e na quantidade de dias
+    // Cria uma lista de datas a partir da data inicial, considerando o total de dias calculado
     listaDatas = List.Dates(dataInicialDoCalendario, qtdeDias, #duration(1, 0, 0, 0)),
 
-    registros = 
-        List.Transform(
-            listaDatas,
-            each
-                {
-                    _,
-                    Text.Proper(Date.DayOfWeekName(_)),
-                    Text.Proper(Date.MonthName(_)),
-                    Date.Day(_),
-                    Date.Month(_),
-                    Date.Year(_),
-                    #date(Date.Year(_), Date.Month(_), 1),
-                    Date.DayOfWeek(_, Day.Sunday),
-                    Date.ToText(_, "MMyyyy"),
-                    if DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())) = Date.StartOfMonth(_) then "MÊS ATUAL" else Date.ToText(_, "MMyyyy")
-                }
-        ),
+    // Converte cada data da lista em um registro com informações complementares
+    registros = List.Transform(
+        listaDatas,
+        each
+            {
+                _, // A própria data
+                Text.Proper(Date.DayOfWeekName(_)), // Nome do dia da semana (Ex.: "Segunda-feira")
+                Text.Proper(Date.MonthName(_)), // Nome do mês (Ex.: "Janeiro")
+                Date.Day(_), // Número do dia do mês (1, 2, ..., 31)
+                Date.Month(_), // Número do mês (1 a 12)
+                Date.QuarterOfYear(_), // Trimestre do ano (1 a 4)
+                Date.Year(_), // Ano
+                #date(Date.Year(_), Date.Month(_), 1), // Primeiro dia do mês correspondente
+                Date.DayOfWeek(_, Day.Sunday), // Dia da semana como um número (0 = domingo, 6 = sábado)
+                Date.ToText(_, "MMyyyy"), // Representação do mês e ano no formato "MMYYYY"
+                if DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())) = Date.StartOfMonth(_) 
+                   then "MÊS ATUAL" 
+                   else Date.ToText(_, "MMyyyy") // Indica se é o mês atual ou mantém o formato "MMYYYY"
+            }
+    ),
 
+    // Criação da tabela final, organizando os registros gerados com tipos específicos
     tabelaCalendario =
         #table(
-            type 
-                table[
-                    DATA = date, 
-                    DIA SEMANA = text, 
-                    NOME MÊS = text,
-                    DIA = Int64.Type,
-                    MÊS = Int64.Type,
-                    ANO = Int64.Type,
-                    SAFRA = date,
-                    DIA ÚTIL = Int64.Type, 
-                    MES ANO = text,
-                    MES ATUAL = text
-                ],
+            type table[
+                Data = date, // Coluna de datas
+                Dia Semana = text, // Nome do dia da semana
+                Nome Mês = text, // Nome do mês
+                Dia = Int64.Type, // Número do dia
+                Mês = Int64.Type, // Número do mês
+                Trimêstre = Int64.Type, // Número do trimestre
+                Ano = Int64.Type, // Ano
+                Safra = date, // Primeiro dia do mês
+                Dia Útil = Int64.Type, // Identificador numérico do dia da semana
+                Mês Ano = text, // Representação "MMYYYY"
+                Mês Atual = text // Identificador do mês atual ou formato "MMYYYY"
+            ],
             registros
         )
 in

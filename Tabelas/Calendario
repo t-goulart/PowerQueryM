@@ -5,51 +5,71 @@ let
     // Obtém a data final do calendário baseada na data atual do sistema
     dataFinalDoCalendario = Date.From(DateTime.LocalNow()),
 
-    // Calcula a quantidade de dias entre a data inicial e a data final,
+    // Calcula a quantidade de dias entre a data inicial e a data final
     // adicionando 1 para incluir a data final no intervalo
-    qtdeDias = Duration.Days(dataFinalDoCalendario - dataInicialDoCalendario) + 1,
+    // Retorna a diferença de dias entre as datas
+    qtdeDias = Duration.Days(dataFinalDoCalendario-dataInicialDoCalendario) + 1,
 
-    // Cria uma lista de datas a partir da data inicial, considerando o total de dias calculado
+    // Cria uma lsita de datas com base na data inicial e na quantidade de dias
     listaDatas = List.Dates(dataInicialDoCalendario, qtdeDias, #duration(1, 0, 0, 0)),
 
-    // Converte cada data da lista em um registro com informações complementares
-    registros = List.Transform(
-        listaDatas,
-        each
-            {
-                _, // A própria data
-                Text.Proper(Date.DayOfWeekName(_)), // Nome do dia da semana (Ex.: "Segunda-feira")
-                Text.Proper(Date.MonthName(_)), // Nome do mês (Ex.: "Janeiro")
-                Date.Day(_), // Número do dia do mês (1, 2, ..., 31)
-                Date.Month(_), // Número do mês (1 a 12)
-                Date.QuarterOfYear(_), // Trimestre do ano (1 a 4)
-                Date.Year(_), // Ano
-                #date(Date.Year(_), Date.Month(_), 1), // Primeiro dia do mês correspondente
-                Date.DayOfWeek(_, Day.Sunday), // Dia da semana como um número (0 = domingo, 6 = sábado)
-                Date.ToText(_, "MMyyyy"), // Representação do mês e ano no formato "MMYYYY"
-                if DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())) = Date.StartOfMonth(_) 
-                   then "MÊS ATUAL" 
-                   else Date.ToText(_, "MMyyyy") // Indica se é o mês atual ou mantém o formato "MMYYYY"
-            }
-    ),
+    registros = 
+        List.Transform(
+            listaDatas,
+            each
+                {
+                    _,
+                    Text.Proper(Date.DayOfWeekName(_)),
+                    Text.Proper(Date.MonthName(_)),
+                    Date.Day(_),
+                    Date.Month(_),
+                    Date.QuarterOfYear(_),
+                    Number.ToText(Date.QuarterOfYear(_)) & "° Trimestre",
+                    if Date.Month(_) <= 6 then 1 else 2,
+                    if Date.Month(_) <= 6 then "1° Semestre" else "2° Semestre",
+                    Date.Year(_),
+                    #date(Date.Year(_), Date.Month(_), 1),
+                    Date.DayOfWeek(_, Day.Sunday),
+                    Number.From(Date.ToText(_, "yyyyMM")),
+                    Date.ToText(_, "MMyyyy"),
+                    if DateTime.Date(Date.StartOfMonth(DateTime.LocalNow())) = Date.StartOfMonth(_) then "MÊS ATUAL" else Date.ToText(_, "MMyyyy")
+                }
+        ),
 
-    // Criação da tabela final, organizando os registros gerados com tipos específicos
     tabelaCalendario =
         #table(
-            type table[
-                Data = date, // Coluna de datas
-                Dia Semana = text, // Nome do dia da semana
-                Nome Mês = text, // Nome do mês
-                Dia = Int64.Type, // Número do dia
-                Mês = Int64.Type, // Número do mês
-                Trimêstre = Int64.Type, // Número do trimestre
-                Ano = Int64.Type, // Ano
-                Safra = date, // Primeiro dia do mês
-                Dia Útil = Int64.Type, // Identificador numérico do dia da semana
-                Mês Ano = text, // Representação "MMYYYY"
-                Mês Atual = text // Identificador do mês atual ou formato "MMYYYY"
-            ],
+            type 
+                table[
+                    Data = date, 
+                    Dia Semana = text, 
+                    Nome Mês = text,
+                    Dia = Int64.Type,
+                    Mês = Int64.Type,
+                    Trimestre = Int64.Type,
+                    Nome Trimestre = text,
+                    Semestre = Int64.Type,
+                    Nome Semestre = text,
+                    Ano = Int64.Type,
+                    Safra = date,
+                    Dia útil = Int64.Type, 
+                    Ano Mês = Int64.Type,
+                    Mês Ano = text,
+                    Mês Atual = text
+                ],
             registros
-        )
+        ),
+
+    ultimoSemestre = Table.AddColumn(
+        tabelaCalendario, 
+        "Ultimo Semestre", each 
+            let
+                DataAtual = DateTime.Date(DateTime.FixedLocalNow()), // Obtém a data e hora atuais
+                SeteMesesAtras = Date.StartOfMonth(Date.AddMonths(DataAtual, -6)), // Calcula a data de 7 meses atrás
+                UltimoDiaMesAtual = Date.EndOfMonth(DataAtual),
+                Resultado = if [Data] >= SeteMesesAtras and [Data] <= UltimoDiaMesAtual then "Sim" else "Não" // Verifica se a data está nos últimos 7 meses
+            in
+                Resultado,
+        type text
+    )
 in
-   tabelaCalendario
+   ultimoSemestre

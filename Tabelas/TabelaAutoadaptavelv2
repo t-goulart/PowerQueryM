@@ -1,0 +1,69 @@
+let
+     // Conecta ao arquivo Excel utilizando uma variável de caminho e lê o conteúdo binário
+    fonte = Excel.Workbook(
+        File.Contents(varCaminho & "\Controle Financeiro.xlsx"),
+        null,
+        true
+    ),
+
+    // Filtra o objeto desejado dentro do arquivo (neste caso, a aba "Planilha1") para garantir que não leremos tabelas ou áreas nomeadas indesejadas
+    filtraLinhas = Table.SelectRows(
+        fonte, 
+        each // Itera sobre cada uma das linha 
+            [Kind] = "Table" // Retorna só a linha que contém o Table
+    ),
+
+    listaColunasDinamicas = List.Distinct( // Cria uma lista distinguindo o nome das colunas para evitar duplicados e travar o código
+        List.Combine( // Combina o resultado gerando uma lista com o nome de todas as colunas (Assim premeditamos até a união de multiplos arquivos)
+            List.Transform( // Vai percorrer cada uma das linhas dentro da coluna Data para capturarmos o nome das colunas
+                filtraLinhas[Data], // Procura o nome das colunas que vamos extrair dentro do Data antes de expandir os dados
+                each Table.ColumnNames(_) // Identifica o nome de cada uma das colunas
+            )
+        )
+    ),
+
+    dadosExpandidos = Table.ExpandTableColumn(
+        filtraLinhas, // Etapa anterior
+        "Data", // Nome da coluna que contém as tabelas (nomes das colunas que vamos identificar automaticamente e expandir) 
+        listaColunasDinamicas, // Nome das colunas que queremos extrair da coluna Data
+        listaColunasDinamicas // Como queremos nomear cada uma das novas colunas (Vai ser o padrão Column1, Column2, etc..)
+    ),
+
+    removeColunasNaoUtilizadas = Table.RemoveColumns( // Remove as colunas desnecessárias
+        dadosExpandidos, // Etapa anterior
+        {
+            "Name",
+            "Item",
+            "Kind",
+            "Hidden"
+        },
+        MissingField.Ignore // Se uma das colunas desaparecer não vai travar o código
+    ),
+
+    // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
+    // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
+    definicaoDadosAutomatica = Table.TransformColumnTypes(
+        removeColunasNaoUtilizadas, 
+        List.Transform( // Vai percorrer cada uma das colunas que estamos informando na próxima linha
+            Table.ColumnNames(removeColunasNaoUtilizadas), // Indentifica exclusivamente o nome das colunas que vamos usar nas transformações a seguir 
+            each // Itera sobre cada uma das colunas (Le o nome de cada coluna a cada "volta" como se fosse um for each)
+            { 
+                _, // Passa a coluna como um parametro (Esse underline é o nome da coluna)
+                Value.Type( // Identifica o tipo, ou seja, se encontrar o valor 50, ela retorna Int64.Type. Se encontrar 01/01/2025, retorna Date.Type.
+                    List.First( // Vai até a primeira linha e captura o valor da coluna (Ignorando os nulos por causa da próxima etapa)
+                        List.RemoveNulls( // Se a primeira linha contem valores nulos vai ignorar e olhar para a próxima
+                            List.FirstN(
+                                Table.Column(
+                                    removeColunasNaoUtilizadas, // Extrai a coluna inteira para que a função List para olhar para a coluna (Nesse caso as 4 primeiras linhas)
+                                    _ // Retorna o nome da coluna
+                                ), 
+                                4 // Verifica as 4 primeiras linhas
+                            )
+                        )
+                    )
+                )
+            }
+        )
+    )
+in
+    definicaoDadosAutomatica

@@ -1,0 +1,27 @@
+/*
+    // Adiciona uma nova coluna chamada "Imagem" a sua tabela.
+    // O valor de cada linha nesta nova coluna é o resultado da aplicação da função personalizada
+    // '_funcaoTransformarImagens' ao conteúdo binário da coluna "Content" da mesma linha.
+    // O tipo de dados da nova coluna é definido como 'text' (assumindo que a função retorna texto,
+    // ajuste o tipo se a função retornar outro tipo de dado, como binary).
+    adicionaColunaImagem =
+        Table.AddColumn(
+            [Etapa anterior da sua tabela],
+            "Imagem", // Nome da nova coluna
+            each _funcaoTransformarImagensJpeg([Content]), // Passa a função como parametro
+            type text
+        ),
+/*
+
+// Define a função BinParaImagem que converte uma fonte binária em texto
+let
+    BinParaImagem = (FonteBinaria as binary) as text =>
+    let
+        // Converte a fonte binária para uma string Base64 e adiciona o prefixo necessário para imagens JPEG
+        Base64 = "data:image/jpeg;base64, " & Binary.ToText(FonteBinaria, BinaryEncoding.Base64)
+    in
+    // Retorna a string Base64 resultante
+    Base64
+in
+    // Retorna a função BinParaImagem
+    BinParaImagem

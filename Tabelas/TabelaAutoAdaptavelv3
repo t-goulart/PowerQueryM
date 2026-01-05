@@ -1,0 +1,63 @@
+let
+    // Conecta ao arquivo Excel utilizando uma variável de caminho e lê o conteúdo binário
+    fonte = Excel.Workbook(File.Contents(varCaminho & "\Rendimentos.xlsx"), null, true),
+
+    // Filtra o objeto desejado dentro do arquivo (neste caso, a aba "Planilha1") para garantir que não leremos tabelas ou áreas nomeadas indesejadas
+    filtraLinhas = Table.SelectRows(
+        fonte, // Etapa anterior 
+        each // Itera sobre cada uma das linha 
+            [Kind] ="Sheet" // Retorna só a linha que contém a sheet
+    ),
+
+    listaColunasDinamicas = List.Distinct( // Cria uma lista distinguindo o nome das colunas para evitar duplicados e travar o código
+        List.Combine( // Combina o resultado gerando uma lista com o nome de todas as colunas (Assim premeditamos até a união de multiplos arquivos)
+            List.Transform( // Vai percorrer cada uma das linhas dentro da coluna Data para capturarmos o nome das colunas
+                filtraLinhas[Data], // Procura o nome das colunas que vamos extrair dentro do Data antes de expandir os dados
+                each Table.ColumnNames(_) // Identifica o nome de cada uma das colunas
+            )
+        )
+    ),
+
+    dadosExpandidos = Table.ExpandTableColumn(
+        filtraLinhas, // Etapa anterior
+        "Data", // Nome da coluna que contém as tabelas (nomes das colunas que vamos identificar automaticamente e expandir) 
+        listaColunasDinamicas, // Nome das colunas que queremos extrair da coluna Data
+        listaColunasDinamicas // Como queremos nomear cada uma das novas colunas (Vai ser o padrão Column1, Column2, etc..)
+    ),
+
+    removeColunasNaoUtilizadas = Table.RemoveColumns( // Remove as colunas desnecessárias
+        dadosExpandidos, // Etapa anterior
+        {
+            "Name",
+            "Item",
+            "Kind",
+            "Hidden"
+        },
+        MissingField.Ignore // Se uma das colunas desaparecer não vai travar o código
+    ),
+
+    promoveCabecalhos = Table.PromoteHeaders(
+        removeColunasNaoUtilizadas, // Usa a planilha Excel como fonte
+        [PromoteAllScalars=true] // Promove todos os valores escalares a cabeçalhos
+    ),
+
+    // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
+    // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
+    definicaoDadosAutomatica = Table.TransformColumnTypes(
+        promoveCabecalhos, 
+        List.Transform(
+            Table.ColumnNames(promoveCabecalhos), 
+            each 
+                let
+                    _valoresAmostra = List.FirstN(Table.Column(promoveCabecalhos, _), 10), // Captura os dados das 4 primeiras linhas
+                    _primeiroValorValido = List.First(List.RemoveNulls(_valoresAmostra)), // Obtém o primeiro valor que não seja nulo
+                    
+                    _tipoIdentificado = 
+                        if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text'. 
+                        else Value.Type(_primeiroValorValido) // SENÃO, identifica o tipo do valor encontrado.
+                in
+                    { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas
+        )
+    )
+in
+    definicaoDadosAutomatica

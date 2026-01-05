@@ -53,7 +53,7 @@ let
                     _primeiroValorValido = List.First(List.RemoveNulls(_valoresAmostra)), // Obtém o primeiro valor que não seja nulo
                     
                     _tipoIdentificado = 
-                        if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text'. 
+                        if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text', mas você pode alterar para outro tipo ou any
                         else Value.Type(_primeiroValorValido) // SENÃO, identifica o tipo do valor encontrado.
                 in
                     { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas

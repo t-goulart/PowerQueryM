@@ -18,7 +18,7 @@ let
     BinParaImagem = (FonteBinaria as binary) as text =>
     let
         // Converte a fonte binária para uma string Base64 e adiciona o prefixo necessário para imagens JPEG
-        Base64 = "data:image/jpeg;base64, " & Binary.ToText(FonteBinaria, BinaryEncoding.Base64)
+        Base64 = "data:image/jpeg;base64, " & Binary.ToText(FonteBinaria, BinaryEncoding.Base64) // Você pode alterar o tipo de imagem que vai converter, por exemplo, alterando jpeg para png
     in
     // Retorna a string Base64 resultante
     Base64

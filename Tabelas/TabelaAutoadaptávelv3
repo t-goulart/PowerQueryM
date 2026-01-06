@@ -43,14 +43,20 @@ let
 
     // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
     // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
-    definicaoDadosAutomatica = Table.TransformColumnTypes(
-        promoveCabecalhos, 
-        List.Transform(
-            Table.ColumnNames(promoveCabecalhos), 
-            each 
+    definicaoDadosAutomatica = Table.TransformColumnTypes( // Transforma o tipo de dado da coluna ou colunas
+        promoveCabecalhos, // Etapa anterior 
+        List.Transform( // Funciona como um laço de repetição iterando sobre a lista que é passada
+            Table.ColumnNames(promoveCabecalhos), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
+            each // O each vai funcionar como um laço de repetição lendo cada uma das colunas 
                 let
-                    _valoresAmostra = List.FirstN(Table.Column(promoveCabecalhos, _), 10), // Captura os dados das 4 primeiras linhas
-                    _primeiroValorValido = List.First(List.RemoveNulls(_valoresAmostra)), // Obtém o primeiro valor que não seja nulo
+                    _valoresAmostra = List.FirstN( // Lista os primeiro "X" valores
+                        Table.Column(promoveCabecalhos, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
+                        10 // Vai fazer com que o List.FirstN capture os 10 primeiros valores
+                    ), 
+
+                    _primeiroValorValido = List.First( // Obtém o primeiro valor
+                        List.RemoveNulls(_valoresAmostra) // Removemos todos os valores nulos para que facilite na identificação do tipo de dado
+                    ), 
                     
                     _tipoIdentificado = 
                         if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text', mas você pode alterar para outro tipo ou any

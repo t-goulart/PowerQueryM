@@ -25,19 +25,15 @@ let
         listaColunasDinamicas // Como queremos nomear cada uma das novas colunas (Vai ser o padrão Column1, Column2, etc..)
     ),
 
-    removeColunasNaoUtilizadas = Table.RemoveColumns( // Remove as colunas desnecessárias
-        dadosExpandidos, // Etapa anterior
-        {
-            "Name",
-            "Item",
-            "Kind",
-            "Hidden"
-        },
+    // Em vez de remover o que você não quer, você seleciona apenas o que você quer
+    manterApenasColunasDinamicas = Table.SelectColumns( // Seleciona as colunas
+        dadosExpandidos, // Etapa anterior 
+        listaColunasDinamicas, // Nome das colunas que devem ser mantidas, ou seja, colunas do arquivo original
         MissingField.Ignore // Se uma das colunas desaparecer não vai travar o código
     ),
 
     promoveCabecalhos = Table.PromoteHeaders(
-        removeColunasNaoUtilizadas, // Usa a planilha Excel como fonte
+        manterApenasColunasDinamicas, // Usa a planilha Excel como fonte
         [PromoteAllScalars=true] // Promove todos os valores escalares a cabeçalhos
     ),
 

@@ -37,16 +37,25 @@ let
         [PromoteAllScalars=true] // Promove todos os valores escalares a cabeçalhos
     ),
 
+    // Verifica a primeira e segunda coluna e mantém apenas as linhas onde essas duas colunas não estão vazias
+    removeLinhasVaziasDinamicamente = Table.SelectRows( // Seleciona as linhas da tabela
+        promoveCabecalhos, // Etapa anterior
+        each // Percorre cada uma das linhas da coluna(s)
+            // Captura os valores informados da coluna | Passa a coluna como parametro | O número zero entre chaves captura a primeira coluna
+            Record.Field(_,  Table.ColumnNames(promoveCabecalhos){0}) <> null 
+            and Record.Field(_,  Table.ColumnNames(promoveCabecalhos){1}) <> null 
+    ),
+
     // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
     // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
     definicaoDadosAutomatica = Table.TransformColumnTypes( // Transforma o tipo de dado da coluna ou colunas
-        promoveCabecalhos, // Etapa anterior 
+        removeLinhasVaziasDinamicamente, // Etapa anterior 
         List.Transform( // Funciona como um laço de repetição iterando sobre a lista que é passada
-            Table.ColumnNames(promoveCabecalhos), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
+            Table.ColumnNames(removeLinhasVaziasDinamicamente), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
             each // O each vai funcionar como um laço de repetição lendo cada uma das colunas 
                 let
                     _valoresAmostra = List.FirstN( // Lista os primeiro "X" valores
-                        Table.Column(promoveCabecalhos, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
+                        Table.Column(removeLinhasVaziasDinamicamente, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
                         10 // Vai fazer com que o List.FirstN capture os 10 primeiros valores
                     ), 
 

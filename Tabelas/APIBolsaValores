@@ -1,5 +1,4 @@
 let
-    // Essa tabela procura e retorna o valor das cotações de ações e fundos imobiliarios
     // Definição da Função de Consulta à API
     // Adicionado tratamento de erro robusto e tipagem de entrada
     _consultaCotacao = (Ticker as text) as any =>
@@ -9,44 +8,91 @@ let
             
             // Realiza a chamada Web. Usamos Function.InvokeAfter para dar um "fôlego" à API
             // Isso ajuda a evitar o erro 429 em listas grandes
-            ChamadaApi = Function.InvokeAfter( // Controla o tempo da requisição. Em vez de executar imediatamente, força o Power Query a esperar um intervalo específico que definimos na ultima etapa
-                () => Web.Contents( // Gera uma função anônima que executa o Web.Contentes após o tempo de espera que determinamos na ultima etapa do Function.InvokeAfter 
-                    UrlBase & Ticker, // Concatena o endereço da API com o código da ação (ex: https://api.com/MXRF11).
+            _chamadaApi = Function.InvokeAfter( // O Function.InvokeAfter pede para o Power Query aguardar um pouco antes de rodar o código a seguir
+                () => Web.Contents( // Estamos pedindo para o Power Query fazer uma consulta em um sit
+                    UrlBase & Ticker, // Junta o endereço com o nome da ação (ex: https://brapi.dev/api/quote/MXRF11).
                     [
-                        Query = [token = Token], // Limpa os parametros na URL a cada tentativa de consulta 
-                        ManualStatusHandling = {404, 429, 500} // Instrui o Power Query a não interromper o código imediatamente se encontrar erros como 429 (Too Many Requests) ou 500 (Erro de Servidor)
+                        Query = [ // Adiciona os parâmetros após a interrogação da URL
+                            token = Token,
+                            fundamental = "true" // O fundamental=true é o comando que avisa à API: "não me dê só o preço, me dê os indicadores também
+                        ],
+                        ManualStatusHandling = {404, 429, 500} // Evita que o Power BI exiba uma mensagem de erro vermelha e pare tudo caso o site caia (500) ou a ação não exista 404 ou 429, permitindo que o erro aconteça "silenciosamente"
                     ]
                 ),
-                #duration(0, 0, 0, 0.1) // 100ms de intervalo entre requisições
+                #duration(0, 0, 0, 0.1) // Define o tempo de espera. São 0.1 segundos (100 milissegundos) entre cada linha da tabela
             ),
             
-            // Converte o resultado para JSON
-            Json = Json.Document(ChamadaApi), // É o mesmo que usamos para consultar dados JSON
+            _Json = Json.Document(_chamadaApi), // A API retorna os dados em formato JSON
             
-            // Extrai o preço navegando na estrutura: results -> primeiro item -> regularMarketPrice
-            // Usamos try para o caso de o Ticker não ser encontrado ou o JSON vir vazio
-            Preco = try Json[results]{0}[regularMarketPrice] otherwise null
+            // Em vez de retornar apenas o Preço, retornamos o registro [0] inteiro
+            _Dados = try _Json[results]{0} otherwise null //Passa para a variável os dados que estão dentro da lista results
         in
-            Preco,
+            _Dados,
 
     // Referência à tabela de empresas (dEmpresa)
     fonte = Table.SelectRows(
-        dEmpresas, // Tabela que contém o código das empresas que a API vai consultar (Crie uma tabela auxiliar ou adicione esse codigo a sua tabela)
+        dEmpresas, // Tabela que contém o código das empresas que a API vai consultar
         each // Itera sobre cada uma das linhas da tabela dEmpresas procurando apenas por Ações e FII 
             Text.Contains([Tipo de Investimento], "Ações") or 
             Text.Contains([Tipo de Investimento], "FII")
     ),
 
-    // Execução da iteração (O "For Each" do Power Query)
-    // Criamos a coluna chamando a função para cada linha
-    AdicionarCotacao = Table.AddColumn(
-        fonte, // Etapa anterior 
-        "Preço Atual", // Nome da coluna
-        each // Itera (Le linha a linha 
-            if [Código] <> null then // Se o código é diferente de nulo 
-                try _consultaCotacao([Código]) otherwise null // try (Tenta) aplicar a função passando como parametro o código da ação/fii 
-            else null, // Se o código é nulo retorna nulo
-        type number // Define o tipo de dado como numérico com virgula
+    adicionarDadosBrutos = Table.AddColumn(
+        fonte, 
+        "API", 
+        each 
+            if [Código] <> null then // Se o código é diferen de nulo entra na primeira condição
+                try _consultaCotacao([Código]) otherwise null // O try e o otherwise são tentativas de aplicar a função, se ocorrer erro retorna nulo
+            else 
+                null
+    ),
+
+    // Expandir as colunas desejadas
+    // Aqui você escolhe o que quer ver. Ex: regularMarketPrice, priceEarnings, averageDailyVolume3Month, etc.
+    expandirColunas = Table.ExpandRecordColumn(
+        adicionarDadosBrutos, // Etapa anterior 
+        "API", 
+        {
+            "regularMarketPrice", // O preço atual (última cotação) pelo qual o ativo foi negociado (R$ 64,63)
+            "regularMarketChange", // A variação em valor nominal em relação ao fechamento anterior (-0,29 centavos)
+            "regularMarketChangePercent", // A variação percentual do dia (-0,447%). 
+            "marketCap",            // Valor Total da Entidade (Mercado)
+            "priceToBook",          // P/VP (Ajuda a calcular o Patrimonial)
+            "regularMarketVolume"   // Volume/liquidez do dia
+        }, 
+        {
+            "Preço Atual",
+            "Variação Nominal",
+            "Variação Percentual do dia", 
+            "Valor de Mercado", 
+            "P/VP",
+            "Volume/Liquidez"
+        }
+    ),
+
+   // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
+    // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
+    definicaoDadosAutomatica = Table.TransformColumnTypes( // Transforma o tipo de dado da coluna ou colunas
+        expandirColunas, // Etapa anterior 
+        List.Transform( // Funciona como um laço de repetição iterando sobre a lista que é passada
+            Table.ColumnNames(expandirColunas), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
+            each // O each vai funcionar como um laço de repetição lendo cada uma das colunas 
+                let
+                    _valoresAmostra = List.FirstN( // Lista os primeiro "X" valores
+                        Table.Column(expandirColunas, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
+                        10 // Vai fazer com que o List.FirstN capture os 10 primeiros valores
+                    ), 
+
+                    _primeiroValorValido = List.First( // Obtém o primeiro valor
+                        List.RemoveNulls(_valoresAmostra) // Removemos todos os valores nulos para que facilite na identificação do tipo de dado
+                    ), 
+                    
+                    _tipoIdentificado = 
+                        if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text', mas você pode alterar para outro tipo ou any
+                        else Value.Type(_primeiroValorValido) // SENÃO, identifica o tipo do valor encontrado.
+                in
+                    { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas
+        )
     )
 in
-    AdicionarCotacao
+    definicaoDadosAutomatica

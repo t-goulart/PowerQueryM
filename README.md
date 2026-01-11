@@ -1,39 +1,38 @@
-# Power Query - Linguagem M
-Repositório dedicado a compartilhar funções e rotinas criadas com Power Query M (Linguagem M) do Power BI 
+# ⚙️ Power Query M - Funções e Rotinas Dinâmicas
 
-## Conteúdo das pastas
-#### Banco de Dados
-1. MySQL
-2. Oracle
-3. SQLServer
-#### Funções
-1. Corrigir Acentos
-2. Faixa de Dias
-3. Faixa de Horas
-4. PROCV
-5. Proper Case
-6. Remove Aspas
-#### Tabelas
-1. Calendario
+Este repositório centraliza uma biblioteca de funções, métodos e rotinas desenvolvidas em **Linguagem M**, focadas em automação de ETL, otimização de performance e resiliência de dados no Power BI e Excel.
 
+## 🚀 Objetivo
+Diferente de fluxos de ETL rígidos, as rotinas aqui presentes foram projetadas para serem **dinâmicas e autoadaptáveis**, minimizando a necessidade de manutenção manual diante de alterações estruturais nas fontes de dados (*Schema Drift*).
 
+---
 
-## Instruções para utilização dos códigos
+## 📂 Estrutura do Repositório
 
-Os códigos já estão disponíveis separadamente.
-1. Quer aplicar no Excel? Os códigos são voltados para o Power Query do Power BI, portanto adapte, pois algumas funções podem não existir no Excel,
-2. Sempre cole o código no topo e a chamada da função por ultimo (Não esqueça de substituir asterísticos pelos campos).
-3. Acoselho a não renomear variáveis, funções, subrotinas e etc., pois será necessário revisar todo o código e caso ñ o faça, podem ocorrer erros que possam prejudicar seus dados.
-4. Se precisa incluir no seu código principal, sem usar uma chamada (Call), então faça uma cópia de segurança para evitar problemas de adequação
-5. Não apague os comentários para que outros possam ter alguma base de como a rotina funciona.
-6. Não esqueça de manter a identação e organização dos códigos.
+O repositório está organizado em subpastas para facilitar a localização e implementação das rotinas:
 
-Todos os códigos contidos neste repositórios são gratuitos e de uso livre, apenas solicito que referencie esse repositório.
+### 🔹 [Rotina]
+Contém scripts completos de processos de ETL ponta a ponta. 
+* **Destaque:** Implementações de expansão dinâmica de colunas e algoritmos de tipagem automática que analisam a amostra dos dados para definir o tipo de campo em tempo de execução.
 
+### 🔹 [Funções]
+Biblioteca de funções personalizadas (UDFs) para resolver desafios específicos:
+* Tratamento de calendários dinâmicos.
+* Funções para limpeza de caracteres especiais e padronização de strings.
+* Lógicas de cálculos complexos reaproveitáveis em múltiplos modelos.
 
+### 🔹 [Exemplos]
+Arquivos ou trechos de código que demonstram a aplicação prática das funções em cenários reais de Business Intelligence.
 
-## Requisitos do sistema
+---
 
-Não tem requisitos obrigatórios para aplicação dos códigos descritos nesse repositório, podem ser aplicados nas versões mais antigas e recentes do Power BI. Mantenha seu Power BI sempre atualizado, pois pode ser que alguma versão seja descontinuada, desta forma alguma função usada na construção do código pode não funcionar ou não existir.
-O Power Query consegue processar grandes volumes de dados, porém se for necessário aplicar laços de repetição, seu código vai demorar mais, pois aplica em colunas e não em células. Tente fazer o ETL em ferramentas mais robustas como um banco de dados, caso não seja possível, tente evitar laços de repetição e transformações desnecessárias.
+## 🛠️ Diferenciais Técnicos
+* **Autoadaptação:** Uso intensivo de `List.Transform`, `List.Combine` e `Table.ColumnNames` para evitar nomes de colunas fixos (*hardcoded*).
+* **Robustez:** Implementação de lógicas com `MissingField.Ignore` para garantir que a atualização não seja interrompida por campos ausentes.
+* **Performance:** Scripts otimizados para reduzir o consumo de memória e o tempo de processamento durante o *refresh* dos dados.
 
+## 🔗 Como utilizar
+Basta copiar o código `.m` desejado, abrir o **Editor Avançado** no Power Query e adaptar as variáveis de entrada (como caminhos de arquivos ou nomes de tabelas).
+
+---
+**Desenvolvido por [Tiago Almeida Goulart](https://www.linkedin.com/in/tiago-agoulart)** Analista de People Analytics Sênior | Especialista em Automação e Engenharia de Dados

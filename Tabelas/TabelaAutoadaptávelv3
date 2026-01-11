@@ -1,13 +1,18 @@
 let
-    // Conecta ao arquivo Excel utilizando uma variável de caminho e lê o conteúdo binário
-    fonte = Excel.Workbook(File.Contents(varCaminho & "\Rendimentos.xlsx"), null, true),
-
-    // Filtra o objeto desejado dentro do arquivo (neste caso, a aba "Planilha1") para garantir que não leremos tabelas ou áreas nomeadas indesejadas
-    filtraLinhas = Table.SelectRows(
-        fonte, // Etapa anterior 
-        each // Itera sobre cada uma das linha 
-            [Kind] ="Sheet" // Retorna só a linha que contém a sheet
+    // Carrega o ficheiro Excel a partir do diretório parametrizado na variável varCaminho
+    // O uso de 'true' no terceiro argumento permite a importação com cabeçalhos automáticos
+    fonte = Excel.Workbook(
+        File.Contents(varCaminho & "\Rendimentos.xlsx"), // Le o arquivo no caminho informado e converte em binário
+        null, // Essa etapa tenta advinhar e promover os cabeçalhos do arquivo. O null como resposta está dizendo pra ignorar essa tentativa
+        true // True informa que NÃO queremos que o Power Query tente adivinhar o tipo de dado automaticamente
     ),
+
+    filtraLinhas = Table.SelectRows( // Seleciona as linhas da tabela
+        fonte, // Etapa anterior
+        each // Percorre cada uma das linhas
+            [Kind] = "Table" and [Item] = "Rendimentos" // Retona apenas a linha que atende as condições
+    ),
+
 
     listaColunasDinamicas = List.Distinct( // Cria uma lista distinguindo o nome das colunas para evitar duplicados e travar o código
         List.Combine( // Combina o resultado gerando uma lista com o nome de todas as colunas (Assim premeditamos até a união de multiplos arquivos)
@@ -32,31 +37,60 @@ let
         MissingField.Ignore // Se uma das colunas desaparecer não vai travar o código
     ),
 
-    promoveCabecalhos = Table.PromoteHeaders(
-        manterApenasColunasDinamicas, // Usa a planilha Excel como fonte
-        [PromoteAllScalars=true] // Promove todos os valores escalares a cabeçalhos
+    // Aidicona uma coluna para identificarmos quais linhas só tem valores nulos ou vazios
+    adicionaColunaTemporariaParaOrdenarVazios = Table.AddColumn( // Adiciona uma nova coluna
+        manterApenasColunasDinamicas, // Etapa anterior
+        "Linha Vazia", // Nome da nova coluna temporária
+        each // Percorre as LINHAS da tabela, executando cada um dos testes abaixo
+            if 
+                List.AllTrue( // Só retorna TRUE se todos os itens forem verdadeiros
+                    List.Transform( // Cria um laço interno  para percorrer cada linha da LISTA gerada pelo Record.FieldValues
+                        Record.FieldValues(_), // Pega a LINHA atual onde o each está no momento e achata (junta) as células em uma LISTA
+                        each _ = null // se o valor é nulo retorna TRUE ou FALSE
+                    )
+                ) 
+            then 1 // Se o resultado é verdadeiro retorna 1 
+            else 0 // Se o resultado é falso retorna zero
     ),
 
-    // Verifica a primeira e segunda coluna e mantém apenas as linhas onde essas duas colunas não estão vazias
-    removeLinhasVaziasDinamicamente = Table.SelectRows( // Seleciona as linhas da tabela
-        promoveCabecalhos, // Etapa anterior
-        each // Percorre cada uma das linhas da coluna(s)
-            // Captura os valores informados da coluna | Passa a coluna como parametro | O número zero entre chaves captura a primeira coluna
-            Record.Field(_,  Table.ColumnNames(promoveCabecalhos){0}) <> null 
-            and Record.Field(_,  Table.ColumnNames(promoveCabecalhos){1}) <> null 
+    // Ordena os dados da coluna temporária para excluir mais rapidamente para agilizar o processo de exclusão das linhas que contém apenas valores nulos
+    // Pensando em performance é melhor "trazer" as linhas que contém apenas valores nulos e ignorar (remover) do que ler uma a uma e depois ignorar
+    organizarLinhasMantendoNulosAcima = Table.Buffer( // Salva na memória essa organização | É uma forma de garantir o Power Query NÃO tenha um Sort Folding (Esquecer a ordenação)
+        Table.Sort( // Ordena os dados da tabela com base em uma condição
+            adicionaColunaTemporariaParaOrdenarVazios, // Etapa anterior
+            {
+                {
+                    "Linha Vazia", // Coluna que será ordenada
+                    Order.Descending // Organiza o que tem resultado 1 primeiro e resultado 0 depois
+                }
+            }
+        )
+    ),
+
+    // Nessa etapa o Skip "descarta" as linhas do topo enquanto a condição for 1.
+    // Importante: Ordenamos os dados para agrupar o "lixo" no topo e acelerar a limpeza.
+    ignorarLinhasComValoresNulos = Table.Skip( // Esse comando ñ retira linhas, mas ignora (PULA) as que ñ atendem a condição
+        organizarLinhasMantendoNulosAcima, // Etapa anterior
+        each [Linha Vazia] = 1 // Se o valor da linha é 1 deleta, se for 0 mantém
+    ),
+
+    // Removemos a coluna temporária para identificar as linhas com valores nulos
+    removeColunaTemporariaParaOrdenarVazios = Table.RemoveColumns( // Remove colunas
+        ignorarLinhasComValoresNulos, // Etapa anterior
+        {"Linha Vazia"} // Coluna que será removida
     ),
 
     // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
     // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
     definicaoDadosAutomatica = Table.TransformColumnTypes( // Transforma o tipo de dado da coluna ou colunas
-        removeLinhasVaziasDinamicamente, // Etapa anterior 
+        removeColunaTemporariaParaOrdenarVazios, // Etapa anterior 
         List.Transform( // Funciona como um laço de repetição iterando sobre a lista que é passada
-            Table.ColumnNames(removeLinhasVaziasDinamicamente), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
+            Table.ColumnNames(removeColunaTemporariaParaOrdenarVazios), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
             each // O each vai funcionar como um laço de repetição lendo cada uma das colunas 
                 let
                     _valoresAmostra = List.FirstN( // Lista os primeiro "X" valores
-                        Table.Column(removeLinhasVaziasDinamicamente, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
-                        10 // Vai fazer com que o List.FirstN capture os 10 primeiros valores
+                        Table.Column(removeColunaTemporariaParaOrdenarVazios, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
+                        2 // Vai fazer com que o List.FirstN capture os 2 primeiros valores
                     ), 
 
                     _primeiroValorValido = List.First( // Obtém o primeiro valor
@@ -69,6 +103,23 @@ let
                 in
                     { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas
         )
+    ),
+
+    adicionaColunaAno = Table.AddColumn(
+        definicaoDadosAutomatica, // Etapa anterior
+        "Ano", // Nome da nova coluna
+        each Date.Year([Data]),
+        Int64.Type // Define o tipo de dado como inteiro (Sem casas decimais)
+    ),
+
+    // Calcula o Dividend Yield (DY) por unidade
+    // Divide o valor total de proventos pela quantidade de ativos detidos
+    CalculoDY = Table.AddColumn(
+        adicionaColunaAno, // Etapa anterior
+        "DY", // Nome da nova coluna
+        each [Proventos] / [Quantidade], 
+        type number // Define o tipo de dado como numérico com virgula (Com casas decimais)
     )
 in
-    definicaoDadosAutomatica
+    // Retorna a tabela final com os tipos corrigidos e a métrica de rendimento calculada
+    CalculoDY

@@ -103,23 +103,7 @@ let
                 in
                     { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas
         )
-    ),
-
-    adicionaColunaAno = Table.AddColumn(
-        definicaoDadosAutomatica, // Etapa anterior
-        "Ano", // Nome da nova coluna
-        each Date.Year([Data]),
-        Int64.Type // Define o tipo de dado como inteiro (Sem casas decimais)
-    ),
-
-    // Calcula o Dividend Yield (DY) por unidade
-    // Divide o valor total de proventos pela quantidade de ativos detidos
-    CalculoDY = Table.AddColumn(
-        adicionaColunaAno, // Etapa anterior
-        "DY", // Nome da nova coluna
-        each [Proventos] / [Quantidade], 
-        type number // Define o tipo de dado como numérico com virgula (Com casas decimais)
     )
 in
-    // Retorna a tabela final com os tipos corrigidos e a métrica de rendimento calculada
-    CalculoDY
+    // Retorna a tabela final com os tipos 
+    definicaoDadosAutomatica

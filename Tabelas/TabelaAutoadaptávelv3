@@ -95,19 +95,33 @@ let
                     _tipoIdentificado = 
                         if _primeiroValorValido = null then type text // Se for nulo retorna o tipo text (Vamos evitar que entre em todas as condições abaixo para melhorar o desempenho) 
                         else if Value.Type(_primeiroValorValido) <> type text then Value.Type(_primeiroValorValido) 
-                        else 
-                            let // Abre uma segunda instancia para isolar a lógica a seguir 
-                                _texto = Text.From(_primeiroValorValido), // Converte o valor para texto
-                                _tentarData = try Date.FromText(_texto) // Tenta converter o texto para data
+                        else
+
+                            let // Abre uma segunda instancia para isolar a lógica a seguir
+
+                                _texto = Text.From(_primeiroValorValido), // Converte o valor para texto 
+                                
+                                _contemSeparadorData = Text.Contains(_texto, "/") or Text.Contains(_texto, "-"), // Só tenta converter para data se o texto contiver "/" ou "-" pra evitar que números puros (como IDs) sejam confundidos com datas
+
+                                _tentarData = 
+                                    if _contemSeparadorData then // Se tornar true entra nas condições abaixo
+                                        try Date.FromText(_texto) // Tenta converter o texto em data sem travar o código
+                                    else // Se o valor identificado NÃO TEM BARRAS ou HÍFEN nós enganamos o código dizendo que aconteceu um erro
+                                        [HasError=true] // Se não é uma data ñ temos motivo pra tentar continuar o processo, então saimos desse passo pra reduzir o processamento 
+                                
                             in // Fecha a instancia que criamos para fazer a tentativa de conversão
+
                                 if _tentarData[HasError] = false then type date // Se a tentativa de conversão em data ñ falhou, converte o valor em tipo data
                                 else 
                                     let // Vamos repetir o processo, mas agora com tipo numérico
-                                        _tentarNumero = try Number.FromText(_texto) // tenta converter em numero com virgula 
-                                    in 
+
+                                        _tentarNumero = try Number.FromText(_texto) // tenta converter em numero com virgula
+
+                                    in
+
                                         if _tentarNumero[HasError] = false then type number // se ñ falhar converte em numero
                                         else type text // se falhou em converter em data ou numero retorna texto
-                in // Fecha a ultima instancia
+                in
                     {_, _tipoIdentificado } // Atribui o tipo de dado a coluna
             )
         )

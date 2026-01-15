@@ -41,16 +41,10 @@ let
     adicionaColunaTemporariaParaOrdenarVazios = Table.AddColumn( // Adiciona uma nova coluna
         manterApenasColunasDinamicas, // Etapa anterior
         "Linha Vazia", // Nome da nova coluna temporária
-        each // Percorre as LINHAS da tabela, executando cada um dos testes abaixo
-            if 
-                List.AllTrue( // Só retorna TRUE se todos os itens forem verdadeiros
-                    List.Transform( // Cria um laço interno  para percorrer cada linha da LISTA gerada pelo Record.FieldValues
-                        Record.FieldValues(_), // Pega a LINHA atual onde o each está no momento e achata (junta) as células em uma LISTA
-                        each _ = null // se o valor é nulo retorna TRUE ou FALSE
-                    )
-                ) 
-            then 1 // Se o resultado é verdadeiro retorna 1 
-            else 0 // Se o resultado é falso retorna zero
+        each 
+            if List.NonNullCount(Record.FieldValues(_)) = 0 // O record vai transformar a linha inteira em uma lista, para depois contarmos quantos itens dentro da linha ñ são nulos
+            then 1 // Não tem nenhum dado na linha
+            else 0 // Tem dados na linha  
     ),
 
     // Ordena os dados da coluna temporária para excluir mais rapidamente para agilizar o processo de exclusão das linhas que contém apenas valores nulos
@@ -80,30 +74,41 @@ let
         {"Linha Vazia"} // Coluna que será removida
     ),
 
-    // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
-    // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
-    definicaoDadosAutomatica = Table.TransformColumnTypes( // Transforma o tipo de dado da coluna ou colunas
+    definicaoDadosAutomatica = Table.TransformColumnTypes( 
         removeColunaTemporariaParaOrdenarVazios, // Etapa anterior 
-        List.Transform( // Funciona como um laço de repetição iterando sobre a lista que é passada
-            Table.ColumnNames(removeColunaTemporariaParaOrdenarVazios), // Captura o nome das colunas que foram identificadas até a etapa informada (removeColunasNaoUtilizadas) fazendo o List.Transform iterar sobre as colunas
-            each // O each vai funcionar como um laço de repetição lendo cada uma das colunas 
-                let
-                    _valoresAmostra = List.FirstN( // Lista os primeiro "X" valores
-                        Table.Column(removeColunaTemporariaParaOrdenarVazios, _), // Com base na estrutura construída até a etapa removeColunasNaoUtilizadas, pega a coluna atual _ (underline é o nome da coluna atual)
-                        2 // Vai fazer com que o List.FirstN capture os 2 primeiros valores
-                    ), 
+        List.Transform( // Itera sobre cada uma das colunas
+            Table.ColumnNames(removeColunaTemporariaParaOrdenarVazios), // Identifica o nome da coluna atual
+            each // Aplica a cada linha
+                let // Abre uma nova instancia
 
-                    _primeiroValorValido = List.First( // Obtém o primeiro valor
-                        List.RemoveNulls(_valoresAmostra) // Removemos todos os valores nulos para que facilite na identificação do tipo de dado
+                    _valoresAmostra = List.FirstN( // Cria uma lista retornando os 5 primeiros valores da coluna 
+                        Table.Column(removeColunaTemporariaParaOrdenarVazios, _), // Olha a etapa anterior e retorna o nome da coluna atual
+                        5 // Aumentado para 5 para uma amostra mais segura
+                    ),
+
+                    _primeiroValorValido = List.First( // Retorna o primeiro valor ñ nulo como amostra
+                        List.RemoveNulls(_valoresAmostra) // Com base na lista de valores de amostra remove os nulos
                     ), 
-                    
+                        
                     _tipoIdentificado = 
-                        if _primeiroValorValido = null then type text // SE for nulo (coluna vazia), define como 'type text', mas você pode alterar para outro tipo ou any
-                        else Value.Type(_primeiroValorValido) // SENÃO, identifica o tipo do valor encontrado.
-                in
-                    { _, _tipoIdentificado} // Converter o valor da coluna _ (Nome da coluna) para o valor identificado com base nas primeiras "x" linhas
+                        if _primeiroValorValido = null then type text // Se for nulo retorna o tipo text (Vamos evitar que entre em todas as condições abaixo para melhorar o desempenho) 
+                        else if Value.Type(_primeiroValorValido) <> type text then Value.Type(_primeiroValorValido) 
+                        else 
+                            let // Abre uma segunda instancia para isolar a lógica a seguir 
+                                _texto = Text.From(_primeiroValorValido), // Converte o valor para texto
+                                _tentarData = try Date.FromText(_texto) // Tenta converter o texto para data
+                            in // Fecha a instancia que criamos para fazer a tentativa de conversão
+                                if _tentarData[HasError] = false then type date // Se a tentativa de conversão em data ñ falhou, converte o valor em tipo data
+                                else 
+                                    let // Vamos repetir o processo, mas agora com tipo numérico
+                                        _tentarNumero = try Number.FromText(_texto) // tenta converter em numero com virgula 
+                                    in 
+                                        if _tentarNumero[HasError] = false then type number // se ñ falhar converte em numero
+                                        else type text // se falhou em converter em data ou numero retorna texto
+                in // Fecha a ultima instancia
+                    {_, _tipoIdentificado } // Atribui o tipo de dado a coluna
+            )
         )
-    )
 in
     // Retorna a tabela final com os tipos 
     definicaoDadosAutomatica

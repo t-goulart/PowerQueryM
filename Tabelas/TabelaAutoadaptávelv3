@@ -74,6 +74,8 @@ let
         {"Linha Vazia"} // Coluna que será removida
     ),
 
+    // Esta etapa força o Power Query a analisar o conteúdo de cada coluna 
+    // e decidir o melhor tipo (Data, Número, Texto) de forma 100% dinâmica.
     definicaoDadosAutomatica = Table.TransformColumnTypes( 
         removeColunaTemporariaParaOrdenarVazios, // Etapa anterior 
         List.Transform( // Itera sobre cada uma das colunas
